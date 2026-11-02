@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DayFlow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>DayFlow - スケジュール</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d30;--panel2:#1c2740;--line:#2b3854;--text:#f4f6fb;--muted:#9ba8bf;--accent:#8b9cff;--green:#62d6a4;--red:#ff818b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#121a30,#080c17 65%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+header{padding:calc(env(safe-area-inset-top) + 18px) 18px 14px;max-width:760px;margin:auto}
+.brand{font-size:12px;letter-spacing:.18em;color:var(--accent);font-weight:800}.heading{font-size:27px;font-weight:800;margin:5px 0 3px}.sub{font-size:13px;color:var(--muted)}
+main{max-width:760px;margin:auto;padding:0 14px calc(35px + env(safe-area-inset-bottom))}
+.tabs{display:flex;gap:8px;background:#10182a;padding:5px;border:1px solid var(--line);border-radius:15px;margin:8px 0 14px}
+.tab{flex:1;border:0;border-radius:11px;padding:11px;background:transparent;color:var(--muted);font-weight:700;font-size:14px}.tab.active{background:var(--panel2);color:var(--text)}
+.card{background:rgba(21,29,48,.94);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:13px;box-shadow:0 12px 35px #0002}
+.row{display:flex;align-items:center;gap:9px}.between{justify-content:space-between}.datebar button,.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px 12px;font-weight:700}
+.datebar strong{font-size:15px}.progress{height:8px;background:#2b3650;border-radius:20px;overflow:hidden;margin-top:10px}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#8294ff,#64d8b1);border-radius:20px;transition:width .2s}
+.small{font-size:12px;color:var(--muted)}.section-title{font-size:15px;font-weight:800;margin:0 0 10px}
+.slot{display:grid;grid-template-columns:58px 1fr 28px;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #28334a}.slot:last-child{border:0}.time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.slot input[type=text]{width:100%;min-width:0;background:#10182a;border:1px solid #2b3854;border-radius:9px;padding:10px;color:var(--text);font-size:14px;outline:none}.slot input:focus{border-color:var(--accent)}.slot.done input[type=text]{opacity:.55;text-decoration:line-through}.slot input[type=checkbox]{width:19px;height:19px;accent-color:#7f91ff}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn.primary{background:#6579df;border-color:#6579df}.btn.danger{color:#ff9aa2}.btn:active,.tab:active{transform:scale(.98)}
+input[type=date]{background:#10182a;color:var(--text);border:1px solid var(--line);padding:9px;border-radius:10px}
+.template-day{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.template-day:last-child{border:0}.template-day span{font-weight:700}
+textarea{width:100%;min-height:75px;background:#10182a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+footer{text-align:center;color:#75829a;font-size:11px;padding:18px}
+.hidden{display:none!important}.notice{background:#17243a;border:1px solid #344666;color:#c8d5f2;border-radius:12px;padding:12px;font-size:12px;line-height:1.6}
+@media(min-width:600px){.slot{grid-template-columns:70px 1fr 30px;padding:9px 3px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">DAYFLOW</div><div class="heading">今日を、整える。</div>
+ <div class="sub">予定を分けて、ひとつずつ進めよう。</div>
+</header>
+<main>
+ <div class="tabs"><button class="tab active" id="dailyTab">今日の予定</button><button class="tab" id="templateTab">曜日テンプレート</button></div>
+ <section id="dailyView">
+  <div class="card">
+   <div class="row between datebar"><button id="prevDay" aria-label="前の日">‹</button><strong id="dateLabel"></strong><button id="nextDay" aria-label="次の日">›</button></div>
+   <div class="row between" style="margin-top:13px"><span class="small">今日の達成度</span><strong id="progressText">0 / 48</strong></div>
+   <div class="progress"><span id="progressBar"></span></div>
+  </div>
+  <div class="card">
+   <div class="row between" style="margin-bottom:10px"><h2 class="section-title" style="margin:0">スケジュール</h2><span class="small">30分ごと</span></div>
+   <div id="slots"></div>
+  </div>
+  <div class="card">
+   <div class="actions"><button class="btn primary" id="applyTemplate">この曜日のテンプレートを適用</button><button class="btn danger" id="clearDay">この日の予定を消去</button></div>
+  </div>
+ </section>
+ <section id="templateView" class="hidden">
+  <div class="card">
+   <h2 class="section-title">曜日テンプレート</h2>
+   <p class="small">毎週の基本スケジュールを登録できます。予定はこの端末内に保存されます。</p>
+   <div id="templateDays"></div>
+  </div>
+  <div class="card">
+   <h2 class="section-title" id="editorTitle">テンプレートを編集</h2>
+   <div class="row between" style="margin-bottom:10px"><span class="small">編集する曜日</span><select id="daySelect"></select></div>
+   <div id="templateSlots"></div>
+   <div class="actions" style="margin-top:13px"><button class="btn primary" id="saveTemplate">テンプレートを保存</button><button class="btn" id="copyWeekdays">月〜金にコピー</button></div>
+  </div>
+ </section>
+ <div class="notice">このアプリは入力内容をこの端末のブラウザ内に保存します。アプリのデータやブラウザの保存領域を消去すると、予定も消える場合があります。</div>
+ <footer>DayFlow · オフライン対応スケジュール</footer>
+</main>
+<script>
+const DAYS=['日','月','火','水','木','金','土'];
+const KEY='dayflow-v1-data';
+const blank=()=>Array.from({length:48},()=>({text:'',done:false}));
+let store=load(), selected=new Date(), editDay=1;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{days:{},templates:{}}}catch{return {days:{},templates:{}}}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(store))}
+function key(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dayData(d){let k=key(d);if(!store.days[k])store.days[k]=blank();return store.days[k]}
+function slotHTML(items,container,change){container.innerHTML='';items.forEach((v,i)=>{let row=document.createElement('div');row.className='slot'+(v.done?' done':'');let time=document.createElement('span');time.className='time';time.textContent=`${String(Math.floor(i/2)).padStart(2,'0')}:${i%2?'30':'00'}`;let input=document.createElement('input');input.type='text';input.placeholder='予定を入力';input.value=v.text;input.setAttribute('aria-label',time.textContent+'の予定');input.addEventListener('input',()=>change(i,{...v,text:input.value}));let check=document.createElement('input');check.type='checkbox';check.checked=v.done;check.setAttribute('aria-label','完了');check.addEventListener('change',()=>change(i,{...v,done:check.checked}));row.append(time,input,check);container.append(row)})}
+function renderDaily(){document.getElementById('dateLabel').textContent=`${selected.getFullYear()}年${selected.getMonth()+1}月${selected.getDate()}日（${DAYS[selected.getDay()]}）`;let data=dayData(selected);slotHTML(data,document.getElementById('slots'),(i,v)=>{data[i]=v;persist();updateProgress()});updateProgress()}
+function updateProgress(){let d=dayData(selected),n=d.filter(x=>x.done).length;document.getElementById('progressText').textContent=`${n} / 48`;document.getElementById('progressBar').style.width=(n/48*100)+'%'}
+function renderTemplates(){let list=document.getElementById('templateDays');list.innerHTML='';DAYS.forEach((d,i)=>{let row=document.createElement('div');row.className='template-day';let label=document.createElement('span');label.textContent=d+'曜日';let b=document.createElement('button');b.className='btn';b.textContent='編集';b.onclick=()=>{document.getElementById('daySelect').value=String(i);editDay=i;renderTemplateEditor()};row.append(label,b);list.append(row)});let s=document.getElementById('daySelect');s.innerHTML='';DAYS.forEach((d,i)=>{let o=document.createElement('option');o.value=i;o.textContent=d+'曜日';s.append(o)});s.value=editDay;renderTemplateEditor()}
+function renderTemplateEditor(){let t=store.templates[editDay]||blank();document.getElementById('editorTitle').textContent=DAYS[editDay]+'曜日のテンプレート';slotHTML(t,document.getElementById('templateSlots'),(i,v)=>{t[i]=v;store.templates[editDay]=t;persist()})}
+document.getElementById('prevDay').onclick=()=>{selected.setDate(selected.getDate()-1);renderDaily()};
+document.getElementById('nextDay').onclick=()=>{selected.setDate(selected.getDate()+1);renderDaily()};
+document.getElementById('clearDay').onclick=()=>{if(confirm('この日の予定をすべて消去しますか？')){store.days[key(selected)]=blank();persist();renderDaily()}};
+document.getElementById('applyTemplate').onclick=()=>{let t=store.templates[selected.getDay()];if(!t){alert('この曜日のテンプレートはまだありません');return}if(confirm('テンプレートをこの日に適用しますか？')){store.days[key(selected)]=t.map(x=>({...x,done:false}));persist();renderDaily()}};
+document.getElementById('daySelect').onchange=e=>{editDay=Number(e.target.value);renderTemplateEditor()};
+document.getElementById('saveTemplate').onclick=()=>{let rows=[...document.querySelectorAll('#templateSlots .slot')];let t=rows.map(r=>({text:r.querySelector('input[type=text]').value,done:false}));store.templates[editDay]=t;persist();alert('保存しました')};
+document.getElementById('copyWeekdays').onclick=()=>{let rows=[...document.querySelectorAll('#templateSlots .slot')];let t=rows.map(r=>({text:r.querySelector('input[type=text]').value,done:false}));[1,2,3,4,5].forEach(i=>store.templates[i]=t.map(x=>({...x})));persist();alert('月曜日から金曜日にコピーしました')};
+function switchTab(which){let daily=which==='daily';document.getElementById('dailyView').classList.toggle('hidden',!daily);document.getElementById('templateView').classList.toggle('hidden',daily);document.getElementById('dailyTab').classList.toggle('active',daily);document.getElementById('templateTab').classList.toggle('active',!daily)}
+document.getElementById('dailyTab').onclick=()=>switchTab('daily');document.getElementById('templateTab').onclick=()=>switchTab('template');
+renderDaily();renderTemplates();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
