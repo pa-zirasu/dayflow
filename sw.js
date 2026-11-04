@@ -1,4 +1,4 @@
-const CACHE = "dayflow-offline-v1";
+const CACHE = "dayflow-offline-v3";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
